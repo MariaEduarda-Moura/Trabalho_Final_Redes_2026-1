@@ -13,21 +13,16 @@ typedef struct {
 Pacote criar_pacote(char *origem, char *destino, int ttl, char *conteudo) {
     Pacote p; // Cria uma variável temporária do tipo Pacote chamada 'p'
 
-    // Copia o texto do parâmetro 'origem' para dentro do 'p.ip_origem'
     strcpy(p.ip_origem, origem);
-    
-    // Copia o texto do parâmetro 'destino' para dentro do 'p.ip_destino'
     strcpy(p.ip_destino, destino);
-    
-    // Como o TTL é um número inteiro simples, aqui podemos usar o '=' direto!
+
     p.ttl = ttl;
     
-    // Copia a mensagem para dentro dos dados do pacote
     strcpy(p.dados, conteudo);
 
-    return p; // Devolve o pacote montado para quem chamou a função
+    return p; 
 }
-// Esta função apenas lê o pacote e mostra na tela. Ela não altera nada (por isso não tem return)
+
 void imprimir_pacote(Pacote p) {
     printf("\n====================================\n");
     printf("         DADOS DO PACOTE            \n");
@@ -90,7 +85,7 @@ int main() {
 
                 // Chama a sua funcao do Passo 1 salvando o retorno na struct global
                 pacote_atual = criar_pacote(ip_orig, ip_dest, ttl, dados);
-                pacote_criado = 1; // Avisa o sistema que o pacote existe
+                pacote_criado = 1;
                 printf("\n[Sucesso] Pacote gerado e armazenado na memoria!\n");
                 break;
                 
@@ -106,7 +101,6 @@ int main() {
                 if (pacote_criado == 0) {
                     printf("\n[Aviso] Nenhum pacote foi criado ate o momento.\n");
                 } else {
-                    // Chama a sua funcao de impressao do Passo 1
                     imprimir_pacote(pacote_atual);
                 }
                 break;
