@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 
 typedef struct {
     char ip_origem[16];  // Guarda o IP de quem envia. Tem tamanho 16 para caber o formato "XXX.XXX.XXX.XXX" + o fim do texto (\0)
@@ -33,6 +34,82 @@ void imprimir_pacote(Pacote p) {
     printf(" Conteudo   : %s\n", p.dados);
     printf("====================================\n");
 }
+
+// ====================================================================
+// INÍCIO: ESTRUTURAS AUXILIARES PARA FACILITAR A INTEGRAÇÃO (FRAN)
+// ====================================================================
+
+// Uma rota simples apenas para testes do motor isolado
+typedef struct {
+    char rede_dest[16];
+    char mask[16];
+    char next_hop[16];
+} RotaTeste;
+
+RotaTeste tabela_rotas_teste[100];
+int qtd_rotas_teste = 0;
+
+// Função auxiliar: Converte IP em string para inteiro de 32 bits
+uint32_t ip_para_int(const char *ip_str) {
+    uint32_t p[4];
+    if (sscanf(ip_str, "%u.%u.%u.%u", &p[0], &p[1], &p[2], &p[3]) != 4) return 0;
+    return (p[0] << 24) | (p[1] << 16) | (p[2] << 8) | p[3];
+}
+
+// Função auxiliar: Conta o número de bits 1 na máscara (Longest Prefix)
+int contar_prefixo(const char *mask_str) {
+    uint32_t mask = ip_para_int(mask_str);
+    int count = 0;
+    while (mask) {
+        count += (mask & 1);
+        mask >>= 1;
+    }
+    return count;
+}
+
+// ====================================================================
+// FIM: ESTRUTURAS AUXILIARES
+// ====================================================================
+
+// --- MOTOR DE ROTEAMENTO (PASSO 4) ---
+void encaminhar_pacote(Pacote *p) {
+    printf("\n--- INICIANDO MOTOR DE ROTEAMENTO ---\n");
+    if (p->ttl <= 0) {
+        printf("[Erro] Pacote descartado (TTL = 0) - Time to Live Exceeded.\n");
+        return;
+    }
+
+    p->ttl -= 1; // Decrementa TTL
+    printf("[Info] TTL decrementado para %d\n", p->ttl);
+
+    uint32_t ip_dest_int = ip_para_int(p->ip_destino);
+    int melhor_prefixo = -1;
+    int indice_melhor_rota = -1;
+
+    // Busca na tabela de rotas com Longest Prefix Match (LPM)
+    for (int i = 0; i < qtd_rotas_teste; i++) {
+        uint32_t mascara_int = ip_para_int(tabela_rotas_teste[i].mask);
+        uint32_t rede_dest_int = ip_para_int(tabela_rotas_teste[i].rede_dest);
+
+        // Operação AND bit a bit para achar a rede
+        if ((ip_dest_int & mascara_int) == rede_dest_int) {
+            int prefixo_atual = contar_prefixo(tabela_rotas_teste[i].mask);
+            if (prefixo_atual > melhor_prefixo) {
+                melhor_prefixo = prefixo_atual;
+                indice_melhor_rota = i;
+            }
+        }
+    }
+
+    if (indice_melhor_rota != -1) {
+        printf("[Sucesso] Match encontrado! Rota escolhida via LPM (/%d)\n", melhor_prefixo);
+        printf("[Forwarding] Encaminhando pacote para Next Hop: %s\n", tabela_rotas_teste[indice_melhor_rota].next_hop);
+    } else {
+        printf("[Erro] Nenhuma rota encontrada para o destino %s (Destination Unreachable).\n", p->ip_destino);
+    }
+}
+// -----------------------------------------------------------------
+
 int main() {
     int opcao;
     Pacote pacote_atual;
@@ -58,7 +135,21 @@ int main() {
 
         switch(opcao) {
             case 1:
-                printf("\nEspaco reservado para insercao de rotas.\n");
+                printf("\n--- CADASTRAR ROTA ---\n");
+                printf("Rede de Destino (Ex: 192.168.1.0): ");
+                fgets(tabela_rotas_teste[qtd_rotas_teste].rede_dest, 16, stdin);
+                tabela_rotas_teste[qtd_rotas_teste].rede_dest[strcspn(tabela_rotas_teste[qtd_rotas_teste].rede_dest, "\n")] = 0;
+
+                printf("Mascara (Ex: 255.255.255.0): ");
+                fgets(tabela_rotas_teste[qtd_rotas_teste].mask, 16, stdin);
+                tabela_rotas_teste[qtd_rotas_teste].mask[strcspn(tabela_rotas_teste[qtd_rotas_teste].mask, "\n")] = 0;
+
+                printf("Next Hop (Proximo Roteador): ");
+                fgets(tabela_rotas_teste[qtd_rotas_teste].next_hop, 16, stdin);
+                tabela_rotas_teste[qtd_rotas_teste].next_hop[strcspn(tabela_rotas_teste[qtd_rotas_teste].next_hop, "\n")] = 0;
+
+                qtd_rotas_teste++;
+                printf("[Sucesso] Rota cadastrada localmente para testes do motor!\n");
                 break;
                 
             case 2:
@@ -93,7 +184,7 @@ int main() {
                 if (pacote_criado == 0) {
                     printf("\n[Erro] Voce precisa criar um pacote primeiro (Opcao 3).\n");
                 } else {
-                    printf("\nO motor de encaminhamento processara este pacote em breve...\n");
+                    encaminhar_pacote(&pacote_atual);
                 }
                 break;
                 
