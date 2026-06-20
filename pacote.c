@@ -135,7 +135,21 @@ int main() {
 
         switch(opcao) {
             case 1:
-                printf("\nEspaco reservado para insercao de rotas.\n");
+                printf("\n--- CADASTRAR ROTA ---\n");
+                printf("Rede de Destino (Ex: 192.168.1.0): ");
+                fgets(tabela_rotas_teste[qtd_rotas_teste].rede_dest, 16, stdin);
+                tabela_rotas_teste[qtd_rotas_teste].rede_dest[strcspn(tabela_rotas_teste[qtd_rotas_teste].rede_dest, "\n")] = 0;
+
+                printf("Mascara (Ex: 255.255.255.0): ");
+                fgets(tabela_rotas_teste[qtd_rotas_teste].mask, 16, stdin);
+                tabela_rotas_teste[qtd_rotas_teste].mask[strcspn(tabela_rotas_teste[qtd_rotas_teste].mask, "\n")] = 0;
+
+                printf("Next Hop (Proximo Roteador): ");
+                fgets(tabela_rotas_teste[qtd_rotas_teste].next_hop, 16, stdin);
+                tabela_rotas_teste[qtd_rotas_teste].next_hop[strcspn(tabela_rotas_teste[qtd_rotas_teste].next_hop, "\n")] = 0;
+
+                qtd_rotas_teste++;
+                printf("[Sucesso] Rota cadastrada localmente para testes do motor!\n");
                 break;
                 
             case 2:
@@ -170,7 +184,7 @@ int main() {
                 if (pacote_criado == 0) {
                     printf("\n[Erro] Voce precisa criar um pacote primeiro (Opcao 3).\n");
                 } else {
-                    printf("\nO motor de encaminhamento processara este pacote em breve...\n");
+                    encaminhar_pacote(&pacote_atual);
                 }
                 break;
                 
