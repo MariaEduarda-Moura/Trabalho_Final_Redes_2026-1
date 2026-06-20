@@ -71,6 +71,45 @@ int contar_prefixo(const char *mask_str) {
 // FIM: ESTRUTURAS AUXILIARES
 // ====================================================================
 
+// --- MOTOR DE ROTEAMENTO (PASSO 4) ---
+void encaminhar_pacote(Pacote *p) {
+    printf("\n--- INICIANDO MOTOR DE ROTEAMENTO ---\n");
+    if (p->ttl <= 0) {
+        printf("[Erro] Pacote descartado (TTL = 0) - Time to Live Exceeded.\n");
+        return;
+    }
+
+    p->ttl -= 1; // Decrementa TTL
+    printf("[Info] TTL decrementado para %d\n", p->ttl);
+
+    uint32_t ip_dest_int = ip_para_int(p->ip_destino);
+    int melhor_prefixo = -1;
+    int indice_melhor_rota = -1;
+
+    // Busca na tabela de rotas com Longest Prefix Match (LPM)
+    for (int i = 0; i < qtd_rotas_teste; i++) {
+        uint32_t mascara_int = ip_para_int(tabela_rotas_teste[i].mask);
+        uint32_t rede_dest_int = ip_para_int(tabela_rotas_teste[i].rede_dest);
+
+        // Operação AND bit a bit para achar a rede
+        if ((ip_dest_int & mascara_int) == rede_dest_int) {
+            int prefixo_atual = contar_prefixo(tabela_rotas_teste[i].mask);
+            if (prefixo_atual > melhor_prefixo) {
+                melhor_prefixo = prefixo_atual;
+                indice_melhor_rota = i;
+            }
+        }
+    }
+
+    if (indice_melhor_rota != -1) {
+        printf("[Sucesso] Match encontrado! Rota escolhida via LPM (/%d)\n", melhor_prefixo);
+        printf("[Forwarding] Encaminhando pacote para Next Hop: %s\n", tabela_rotas_teste[indice_melhor_rota].next_hop);
+    } else {
+        printf("[Erro] Nenhuma rota encontrada para o destino %s (Destination Unreachable).\n", p->ip_destino);
+    }
+}
+// -----------------------------------------------------------------
+
 int main() {
     int opcao;
     Pacote pacote_atual;
