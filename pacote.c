@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 
 typedef struct {
     char ip_origem[16];  // Guarda o IP de quem envia. Tem tamanho 16 para caber o formato "XXX.XXX.XXX.XXX" + o fim do texto (\0)
@@ -33,6 +34,43 @@ void imprimir_pacote(Pacote p) {
     printf(" Conteudo   : %s\n", p.dados);
     printf("====================================\n");
 }
+
+// ====================================================================
+// INÍCIO: ESTRUTURAS AUXILIARES PARA FACILITAR A INTEGRAÇÃO (FRAN)
+// ====================================================================
+
+// Uma rota simples apenas para testes do motor isolado
+typedef struct {
+    char rede_dest[16];
+    char mask[16];
+    char next_hop[16];
+} RotaTeste;
+
+RotaTeste tabela_rotas_teste[100];
+int qtd_rotas_teste = 0;
+
+// Função auxiliar: Converte IP em string para inteiro de 32 bits
+uint32_t ip_para_int(const char *ip_str) {
+    uint32_t p[4];
+    if (sscanf(ip_str, "%u.%u.%u.%u", &p[0], &p[1], &p[2], &p[3]) != 4) return 0;
+    return (p[0] << 24) | (p[1] << 16) | (p[2] << 8) | p[3];
+}
+
+// Função auxiliar: Conta o número de bits 1 na máscara (Longest Prefix)
+int contar_prefixo(const char *mask_str) {
+    uint32_t mask = ip_para_int(mask_str);
+    int count = 0;
+    while (mask) {
+        count += (mask & 1);
+        mask >>= 1;
+    }
+    return count;
+}
+
+// ====================================================================
+// FIM: ESTRUTURAS AUXILIARES
+// ====================================================================
+
 int main() {
     int opcao;
     Pacote pacote_atual;
