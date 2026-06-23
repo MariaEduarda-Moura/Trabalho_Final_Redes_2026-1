@@ -1,30 +1,43 @@
+# Detecção Automática do Sistema Operacional onde o 'make' está rodando
+ifeq ($(OS),Windows_NT)
+    # Se estiver rodando nativamente no Windows
+    TARGET := my_program.exe
+    RM     := del /Q
+    CC     := gcc
+else
+    # Se estiver rodando nativamente no Linux / macOS
+    TARGET := my_program
+    RM     := rm -f
+    CC     := gcc
+endif
 
-# 1. Compiler and Flags
-CC       := gcc
+# Se você estiver no Linux e quiser compilar PARA Windows,
+# basta digitar: make env=windows
+ifeq ($(env),windows)
+    CC     := x86_64-w64-mingw32-gcc
+    TARGET := my_program.exe
+    RM     := rm -f
+endif
+
+# Flags de Compilação
 CFLAGS   := -Wall -Wextra -g -O2
 LDFLAGS  := 
 LDLIBS   := 
 
-# 2. Target Executable Name
-TARGET   := my_program
-
-# 3. Source and Object Files
-# Automatically collects all .c files in the current directory
+# Arquivos Fonte e Objetos
 SRCS     := $(wildcard *.c)
 OBJS     := $(SRCS:.c=.o)
 
-# 4. Default Rule (Builds the application)
+# Regras de Compilação
 all: $(TARGET)
 
-# 5. Linking the Executable
 $(TARGET): $(OBJS)
 	$(CC) $(LDFLAGS) $^ $(LDLIBS) -o $@
 
-# 6. Compiling Source Files to Object Files
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# 7. Clean Up Build Files
+# Limpeza (usa o comando correto baseado no OS)
 .PHONY: clean
 clean:
-	rm -f $(OBJS) $(TARGET)
+	$(RM) $(OBJS) $(TARGET)
