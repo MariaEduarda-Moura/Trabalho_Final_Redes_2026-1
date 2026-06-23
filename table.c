@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "table_structs.h"
+#define MAX_MACS_HISTORICO 500
 
 /* Codigo da tabela de roteamento. As funcoes associadas como criar, deletar
  * e consultar estão aqui */
@@ -43,6 +44,43 @@ int better_strncpy(char* dest, char* src, int len){
   return 1;
 } 
 
+void create_random_MAC(char * dest) {
+    // Guarda o histórico de MACs já gerados para garantir a unicidade
+    static char historico[MAX_MACS_HISTORICO][18];
+    static int qtd_gerados = 0;
+    int unico = 0;
+
+    while (!unico) {
+        unsigned char bytes[6];
+        
+        for (int i = 0; i < 6; i++) {
+            bytes[i] = rand() % 256;
+        }
+
+        sprintf(dest, "%02X:%02X:%02X:%02X:%02X:%02X", 
+                bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5]);
+
+        // Garantindo o trailing \0 
+        dest[17] = '\0';
+
+        // Verifica se este MAC já foi gerado antes
+        unico = 1;
+        for (int i = 0; i < qtd_gerados; i++) {
+            if (strcmp(historico[i], dest) == 0) {
+                unico = 0; 
+                break;
+            }
+        }
+
+        //  Se for único, salva no histórico para as próximas chamadas
+        if (unico && qtd_gerados < MAX_MACS_HISTORICO) {
+            strcpy(historico[qtd_gerados], dest);
+            qtd_gerados++;
+        }
+    }
+}
+
+
 Router* create_router(char * endereco, char * nome , char * interface ){
   Router* r1 = malloc(sizeof(Router));
   if (r1 == NULL) return NULL;
@@ -54,9 +92,7 @@ Router* create_router(char * endereco, char * nome , char * interface ){
   }
   strcpy(r1->nome, nome);
   strncpy(r1->interface,interface,sizeof(r1->interface)-1);
-  r1->MAC[0] = endereco[0];
-  r1->MAC[3] = endereco[1];
-
+  create_random_MAC(r1->MAC);
   r1->endereco[sizeof(r1->endereco)-1] = '\0';
   r1->interface[sizeof(r1->interface)-1] = '\0';
 
