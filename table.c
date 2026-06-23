@@ -54,6 +54,8 @@ Router* create_router(char * endereco, char * nome , char * interface ){
   }
   strcpy(r1->nome, nome);
   strncpy(r1->interface,interface,sizeof(r1->interface)-1);
+  r1->MAC[0] = endereco[0];
+  r1->MAC[3] = endereco[1];
 
   r1->endereco[sizeof(r1->endereco)-1] = '\0';
   r1->interface[sizeof(r1->interface)-1] = '\0';
@@ -203,7 +205,7 @@ void display_topology(Network *net) {
     printf("\n=== ROTEADORES ===\n");
     for (int i = 0; i < net->router_count; i++) {
         Router *r = net->routers[i];
-        printf("%d: %s (%s)\n", i, r->nome, r->endereco);
+        printf("%d: %s (%s) | MAC: %s\n" , i, r->nome, r->endereco, r->MAC);
     }
 
     printf("\n=== LINKS FÍSICOS ===\n");
