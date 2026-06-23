@@ -12,6 +12,7 @@ int main() {
     char ip_orig[16], ip_dest[16], dados[100];
     int ttl;
     Network topTopologia;
+    topTopologia.router_count = 0;
 
     while(opcao != '9'){
       printf("Qual menu você quer acessar?\n");
