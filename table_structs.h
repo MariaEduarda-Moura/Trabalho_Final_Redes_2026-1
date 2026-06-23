@@ -30,6 +30,7 @@ struct Router{
   char endereco [END_SIZE];
   char* nome;
   char interface [6];
+  char MAC [18];
   int rt_num;
   int link_num; 
   int rt_max;

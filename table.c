@@ -57,6 +57,7 @@ Router* create_router(char * endereco, char * nome , char * interface ){
 
   r1->endereco[sizeof(r1->endereco)-1] = '\0';
   r1->interface[sizeof(r1->interface)-1] = '\0';
+
   r1->rt_num = 0;
   r1->rt_max = 8;
   r1->rt = malloc(r1->rt_max* sizeof(route_table_entry));
@@ -321,11 +322,63 @@ void free_network(Network *net) {
     init_network(net);
 }
 
+void delete_router(Network *net, int idx) {
+    if (net->router_count == 0) {
+        printf("Nenhum roteador na rede.\n");
+        return;
+    }
+
+    if (idx < 0 || idx >= net->router_count) {
+        printf("Índice inválido.\n");
+        return;
+    }
+
+    Router *r = net->routers[idx];
+
+    for (int i = 0; i < r->link_num; i++) {
+        Router *neighbor = r->p_link[i].neighbor;
+        for (int j = 0; j < neighbor->link_num; j++) {
+            if (neighbor->p_link[j].neighbor == r) {
+                for (int k = j; k < neighbor->link_num - 1; k++) {
+                    neighbor->p_link[k] = neighbor->p_link[k + 1];
+                }
+                neighbor->link_num--;
+                break;
+            }
+        }
+    }
+
+    int i = 0;
+    while (i < net->link_count) {
+        if (net->links[i]->a == r || net->links[i]->b == r) {
+            free(net->links[i]);
+            for (int j = i; j < net->link_count - 1; j++) {
+                net->links[j] = net->links[j + 1];
+            }
+            net->link_count--;
+        } else {
+            i++;
+        }
+    }
+
+    if (r->nome != NULL) free(r->nome);
+    if (r->rt != NULL) free(r->rt);
+    if (r->p_link != NULL) free(r->p_link);
+    free(r);
+
+    for (int j = idx; j < net->router_count - 1; j++) {
+        net->routers[j] = net->routers[j+1];
+    }
+    net->routers[net->router_count - 1] = NULL;
+    net->router_count--;
+}
+
+
 int main(){
     int opt;
     Network topTopologia;
     init_network(&topTopologia);
-    srand(42);
+    srand(42); // Seed pra ter um padrao.
 
     do {
         printf("\n===== MENU DE ROTEAMENTO =====\n");
@@ -335,6 +388,7 @@ int main(){
         printf("4. Criar links de rede (Net Links) a partir dos links físicos\n");
         printf("5. Recalcular tabelas de roteamento (Dijkstra)\n");
         printf("6. Exibir tabelas de roteamento\n");
+        printf("7. Deletar Roteador\n");
         printf("0. Sair\n");
         printf("Escolha: ");
         scanf("%d", &opt);
@@ -391,6 +445,19 @@ int main(){
             case 6:
                 display_routing_tables(&topTopologia);
                 break;
+            case 7:
+                if (topTopologia.router_count == 0) {
+                    printf("É necessário pelo menos um roteador.\n");
+                    break;
+                }
+                printf("Qual roteador deseja excluir?");
+                display_topology(&topTopologia);
+                int idx;
+                scanf("%d",&idx);
+                delete_router(&topTopologia,idx);
+                printf("Roteador deletado com sucesso"); 
+                break;
+
             case 0:
                 printf("Encerrando...\n");
                 break;
