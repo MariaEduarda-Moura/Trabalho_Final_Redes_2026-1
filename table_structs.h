@@ -6,6 +6,8 @@
 // Tamanho do endereço n+1 para facilitar manipulação de strings
 #define END_SIZE 17 
 
+// Function Prototypes
+
 typedef struct Router Router;
 typedef struct Net_link Net_link;
 
@@ -57,5 +59,19 @@ typedef struct{
 SPF_Result* dijkstra(Network *net, Router *source);
 
 void free_spf_result(SPF_Result *result);
+
+int better_strncpy(char* dest, char* src, int len);
+Router* create_router(char * endereco, char * nome , char * interface );
+void create_phy_path(Router* r1, Router* r2);
+void init_network(Network *net);
+void add_router_to_network(Network *net, Router *r);
+void add_phy_link_by_indices(Network *net, int idx1, int idx2);
+void build_links(Network *net);
+void display_topology(Network *net);
+void build_routing_tables(Network *net);
+void recalc_routes(Network *net);
+void display_routing_tables(Network *net);
+void free_network(Network *net);
+int table_menu(Network *topTopologia);
 
 #endif

@@ -54,6 +54,8 @@ Router* create_router(char * endereco, char * nome , char * interface ){
   }
   strcpy(r1->nome, nome);
   strncpy(r1->interface,interface,sizeof(r1->interface)-1);
+  r1->MAC[0] = endereco[0];
+  r1->MAC[3] = endereco[1];
 
   r1->endereco[sizeof(r1->endereco)-1] = '\0';
   r1->interface[sizeof(r1->interface)-1] = '\0';
@@ -203,7 +205,7 @@ void display_topology(Network *net) {
     printf("\n=== ROTEADORES ===\n");
     for (int i = 0; i < net->router_count; i++) {
         Router *r = net->routers[i];
-        printf("%d: %s (%s)\n", i, r->nome, r->endereco);
+        printf("%d: %s (%s) | MAC: %s\n" , i, r->nome, r->endereco, r->MAC);
     }
 
     printf("\n=== LINKS FÍSICOS ===\n");
@@ -374,10 +376,10 @@ void delete_router(Network *net, int idx) {
 }
 
 
-int main(){
+int table_menu(Network *topTopologia){
     int opt;
-    Network topTopologia;
-    init_network(&topTopologia);
+    if(topTopologia->router_count <=0)
+      init_network(topTopologia);
     srand(42); // Seed pra ter um padrao.
 
     do {
@@ -408,7 +410,7 @@ int main(){
                 interface[strcspn(interface, "\n")] = '\0';
                 Router *r = create_router(endereco, nome, interface);
                 if (r) {
-                    add_router_to_network(&topTopologia, r);
+                    add_router_to_network(topTopologia, r);
                     printf("Roteador %s criado.\n", nome);
                 } else {
                     printf("Erro ao criar roteador.\n");
@@ -416,45 +418,45 @@ int main(){
                 break;
             }
             case 2:
-                display_topology(&topTopologia);
+                display_topology(topTopologia);
                 break;
             case 3: {
-                if (topTopologia.router_count < 2) {
+                if (topTopologia->router_count < 2) {
                     printf("É necessário pelo menos dois roteadores.\n");
                     break;
                 }
-                display_topology(&topTopologia);
+                display_topology(topTopologia);
                 int idx1, idx2;
                 printf("Índice do primeiro roteador: ");
                 scanf("%d", &idx1);
                 printf("Índice do segundo roteador: ");
                 scanf("%d", &idx2);
-                add_phy_link_by_indices(&topTopologia, idx1, idx2);
+                add_phy_link_by_indices(topTopologia, idx1, idx2);
                 break;
             }
             case 4:
-                build_links(&topTopologia);
+                build_links(topTopologia);
                 break;
             case 5:
-                if (topTopologia.link_count == 0 && topTopologia.router_count > 0) {
+                if (topTopologia->link_count == 0 && topTopologia->router_count > 0) {
                     printf("Ainda não existem links de rede. Execute a opção 4 primeiro.\n");
                 } else {
-                    recalc_routes(&topTopologia);
+                    recalc_routes(topTopologia);
                 }
                 break;
             case 6:
-                display_routing_tables(&topTopologia);
+                display_routing_tables(topTopologia);
                 break;
             case 7:
-                if (topTopologia.router_count == 0) {
+                if (topTopologia->router_count == 0) {
                     printf("É necessário pelo menos um roteador.\n");
                     break;
                 }
                 printf("Qual roteador deseja excluir?");
-                display_topology(&topTopologia);
+                display_topology(topTopologia);
                 int idx;
                 scanf("%d",&idx);
-                delete_router(&topTopologia,idx);
+                delete_router(topTopologia,idx);
                 printf("Roteador deletado com sucesso"); 
                 break;
 
@@ -465,7 +467,5 @@ int main(){
                 printf("Opção inválida.\n");
         }
     } while (opt != 0);
-
-    free_network(&topTopologia);
     return 1;
 }

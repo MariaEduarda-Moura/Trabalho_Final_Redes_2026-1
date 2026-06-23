@@ -2,13 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
-
-typedef struct {
-    char ip_origem[16];  // Guarda o IP de quem envia. Tem tamanho 16 para caber o formato "XXX.XXX.XXX.XXX" + o fim do texto (\0)
-    char ip_destino[16]; // Guarda o IP de quem vai receber.
-    int ttl;             // Time to Live (Tempo de Vida) - número inteiro que diminui a cada salto
-    char dados[100];     // O conteúdo/mensagem que o pacote carrega (limite de 100 caracteres)
-} Pacote;
+#include "pacotes.h"
 
 // Esta função recebe os dados digitados e devolve um "Pacote" prontinho.
 Pacote criar_pacote(char *origem, char *destino, int ttl, char *conteudo) {
@@ -38,13 +32,6 @@ void imprimir_pacote(Pacote p) {
 // ====================================================================
 // INÍCIO: ESTRUTURAS AUXILIARES PARA FACILITAR A INTEGRAÇÃO (FRAN)
 // ====================================================================
-
-// Uma rota simples apenas para testes do motor isolado
-typedef struct {
-    char rede_dest[16];
-    char mask[16];
-    char next_hop[16];
-} RotaTeste;
 
 RotaTeste tabela_rotas_teste[100];
 int qtd_rotas_teste = 0;
@@ -110,7 +97,7 @@ void encaminhar_pacote(Pacote *p) {
 }
 // -----------------------------------------------------------------
 
-int main() {
+int pacote_menu() {
     int opcao;
     Pacote pacote_atual;
     int pacote_criado = 0; 
