@@ -27,6 +27,10 @@ gcc main.c arp.c -o arp.exe
 ./arp.exe
 ```
 
+Para testar tudo, rode `make` se estiver no Linux ou `mingw32-make` se estiver no Windows.
+
+Agora, é só executar o arquivo de saida "Roteador" 
+
 ---
 **Pendências**: 
 - Fazer o "Merge" de todos esses arquivos isolados.
