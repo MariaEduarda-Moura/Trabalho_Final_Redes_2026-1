@@ -1,12 +1,12 @@
 # Detecção Automática do Sistema Operacional onde o 'make' está rodando
 ifeq ($(OS),Windows_NT)
     # Se estiver rodando nativamente no Windows
-    TARGET := my_program.exe
+    TARGET := Roteador.exe
     RM     := del /Q
     CC     := gcc
 else
     # Se estiver rodando nativamente no Linux / macOS
-    TARGET := my_program
+    TARGET := Roteador
     RM     := rm -f
     CC     := gcc
 endif
