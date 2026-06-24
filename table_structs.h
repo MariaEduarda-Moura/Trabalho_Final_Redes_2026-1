@@ -72,6 +72,9 @@ void build_routing_tables(Network *net);
 void recalc_routes(Network *net);
 void display_routing_tables(Network *net);
 void free_network(Network *net);
+void change_entry_mask(Network *net);
+void save_network(Network *net, const char *filename);
+int load_network(Network *net, const char *filename);
 int table_menu(Network *topTopologia);
 
 #endif
