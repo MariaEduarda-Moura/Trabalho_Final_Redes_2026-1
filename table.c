@@ -412,6 +412,214 @@ void delete_router(Network *net, int idx) {
 }
 
 
+static int router_index(Network *net, Router *r) {
+    for (int i = 0; i < net->router_count; i++) {
+        if (net->routers[i] == r) return i;
+    }
+    return -1;
+}
+
+static int read_line_into(FILE *f, char *buf, int buf_size) {
+    if (!fgets(buf, buf_size, f)) return 0;
+    buf[strcspn(buf, "\r\n")] = '\0';
+    return 1;
+}
+
+static int add_net_link_direct(Network *net, Router *a, Router *b, int cost) {
+    if (net->link_count >= net->link_capacity) {
+        int new_cap = net->link_capacity == 0 ? 4 : net->link_capacity * 2;
+        Net_link **temp = realloc(net->links, new_cap * sizeof(Net_link *));
+        if (!temp) return 0;
+        net->links = temp;
+        net->link_capacity = new_cap;
+    }
+    Net_link *l = malloc(sizeof(Net_link));
+    if (!l) return 0;
+    l->a = a;
+    l->b = b;
+    l->cost = cost;
+    net->links[net->link_count++] = l;
+    return 1;
+}
+
+void change_entry_mask(Network *net) {
+    if (net->router_count == 0) {
+        printf("Nenhum roteador na rede.\n");
+        return;
+    }
+    display_routing_tables(net);
+    int r_idx;
+    printf("Índice do roteador: ");
+    scanf("%d", &r_idx);
+    getchar();
+    if (r_idx < 0 || r_idx >= net->router_count) {
+        printf("Índice de roteador inválido.\n");
+        return;
+    }
+    Router *r = net->routers[r_idx];
+    if (r->rt_num == 0) {
+        printf("Tabela de roteamento vazia para %s.\n", r->nome);
+        return;
+    }
+    printf("Entradas do roteador %s:\n", r->nome);
+    printf("  #   Rede Destino       Máscara           Next Hop           Custo\n");
+    for (int j = 0; j < r->rt_num; j++) {
+        route_table_entry *e = &r->rt[j];
+        printf("  %-3d %-16s %-16s %-16s %d\n", j, e->rede_dest, e->mask, e->next_hop, e->cost);
+    }
+    int e_idx;
+    printf("Índice da entrada: ");
+    scanf("%d", &e_idx);
+    getchar();
+    if (e_idx < 0 || e_idx >= r->rt_num) {
+        printf("Índice de entrada inválido.\n");
+        return;
+    }
+    char new_mask[END_SIZE];
+    printf("Nova máscara (ex: 255.255.255.0): ");
+    fgets(new_mask, END_SIZE, stdin);
+    new_mask[strcspn(new_mask, "\n")] = '\0';
+    better_strncpy(r->rt[e_idx].mask, new_mask, END_SIZE);
+    printf("Máscara da entrada %d do roteador %s atualizada com sucesso.\n", e_idx, r->nome);
+}
+
+void save_network(Network *net, const char *filename) {
+    FILE *f = fopen(filename, "w");
+    if (!f) {
+        printf("Erro ao abrir arquivo para escrita: %s\n", filename);
+        return;
+    }
+    fprintf(f, "ROUTERS %d\n", net->router_count);
+    for (int i = 0; i < net->router_count; i++) {
+        Router *r = net->routers[i];
+        fprintf(f, "%s\n%s\n%s\n%s\n", r->endereco, r->interface, r->MAC, r->nome);
+    }
+    int phy_count = 0;
+    for (int i = 0; i < net->router_count; i++) {
+        for (int j = 0; j < net->routers[i]->link_num; j++) {
+            int nb_idx = router_index(net, net->routers[i]->p_link[j].neighbor);
+            if (i < nb_idx) phy_count++;
+        }
+    }
+    fprintf(f, "PHY_LINKS %d\n", phy_count);
+    for (int i = 0; i < net->router_count; i++) {
+        for (int j = 0; j < net->routers[i]->link_num; j++) {
+            int nb_idx = router_index(net, net->routers[i]->p_link[j].neighbor);
+            if (i < nb_idx)
+                fprintf(f, "%d %d\n", i, nb_idx);
+        }
+    }
+    fprintf(f, "NET_LINKS %d\n", net->link_count);
+    for (int i = 0; i < net->link_count; i++) {
+        Net_link *l = net->links[i];
+        int ia = router_index(net, l->a);
+        int ib = router_index(net, l->b);
+        fprintf(f, "%d %d %d\n", ia, ib, l->cost);
+    }
+    fprintf(f, "RT_TABLES\n");
+    for (int i = 0; i < net->router_count; i++) {
+        Router *r = net->routers[i];
+        fprintf(f, "%d %d\n", i, r->rt_num);
+        for (int j = 0; j < r->rt_num; j++) {
+            route_table_entry *e = &r->rt[j];
+            fprintf(f, "%s %s %s %d\n", e->rede_dest, e->mask, e->next_hop, e->cost);
+        }
+    }
+    fclose(f);
+    printf("Topologia salva em '%s'.\n", filename);
+}
+
+int load_network(Network *net, const char *filename) {
+    FILE *f = fopen(filename, "r");
+    if (!f) {
+        printf("Erro ao abrir arquivo '%s'.\n", filename);
+        return 0;
+    }
+    free_network(net);
+    char line[512];
+    char tmp[512];
+
+    if (!read_line_into(f, line, sizeof(line))) goto parse_error;
+    int router_count;
+    if (sscanf(line, "ROUTERS %d", &router_count) != 1) goto parse_error;
+
+    for (int i = 0; i < router_count; i++) {
+        char endereco[END_SIZE], interface_str[6], mac_str[18], nome_str[256];
+        if (!read_line_into(f, tmp, sizeof(tmp))) goto parse_error;
+        strncpy(endereco, tmp, END_SIZE - 1);
+        endereco[END_SIZE - 1] = '\0';
+        if (!read_line_into(f, tmp, sizeof(tmp))) goto parse_error;
+        strncpy(interface_str, tmp, sizeof(interface_str) - 1);
+        interface_str[sizeof(interface_str) - 1] = '\0';
+        if (!read_line_into(f, tmp, sizeof(tmp))) goto parse_error;
+        strncpy(mac_str, tmp, sizeof(mac_str) - 1);
+        mac_str[sizeof(mac_str) - 1] = '\0';
+        if (!read_line_into(f, nome_str, sizeof(nome_str))) goto parse_error;
+        Router *r = create_router(endereco, nome_str, interface_str);
+        if (!r) goto parse_error;
+        strncpy(r->MAC, mac_str, sizeof(r->MAC) - 1);
+        r->MAC[sizeof(r->MAC) - 1] = '\0';
+        add_router_to_network(net, r);
+    }
+
+    if (!read_line_into(f, line, sizeof(line))) goto parse_error;
+    int phy_count;
+    if (sscanf(line, "PHY_LINKS %d", &phy_count) != 1) goto parse_error;
+    for (int i = 0; i < phy_count; i++) {
+        if (!read_line_into(f, line, sizeof(line))) goto parse_error;
+        int idx1, idx2;
+        if (sscanf(line, "%d %d", &idx1, &idx2) != 2) goto parse_error;
+        if (idx1 < 0 || idx1 >= net->router_count || idx2 < 0 || idx2 >= net->router_count)
+            goto parse_error;
+        create_phy_path(net->routers[idx1], net->routers[idx2]);
+    }
+
+    if (!read_line_into(f, line, sizeof(line))) goto parse_error;
+    int net_link_count;
+    if (sscanf(line, "NET_LINKS %d", &net_link_count) != 1) goto parse_error;
+    for (int i = 0; i < net_link_count; i++) {
+        if (!read_line_into(f, line, sizeof(line))) goto parse_error;
+        int ia, ib, cost;
+        if (sscanf(line, "%d %d %d", &ia, &ib, &cost) != 3) goto parse_error;
+        if (ia < 0 || ia >= net->router_count || ib < 0 || ib >= net->router_count)
+            goto parse_error;
+        if (!add_net_link_direct(net, net->routers[ia], net->routers[ib], cost))
+            goto parse_error;
+    }
+
+    if (!read_line_into(f, line, sizeof(line))) goto parse_error;
+    if (strncmp(line, "RT_TABLES", 9) != 0) goto parse_error;
+    for (int i = 0; i < net->router_count; i++) {
+        if (!read_line_into(f, line, sizeof(line))) goto parse_error;
+        int r_idx, entry_count;
+        if (sscanf(line, "%d %d", &r_idx, &entry_count) != 2) goto parse_error;
+        if (r_idx < 0 || r_idx >= net->router_count) goto parse_error;
+        Router *r = net->routers[r_idx];
+        for (int j = 0; j < entry_count; j++) {
+            if (!read_line_into(f, line, sizeof(line))) goto parse_error;
+            char rd[END_SIZE], msk[END_SIZE], nh[END_SIZE];
+            int cost;
+            if (sscanf(line, "%15s %15s %15s %d", rd, msk, nh, &cost) != 4) goto parse_error;
+            if (r->rt_num >= r->rt_max && !rt_resize(r)) goto parse_error;
+            route_table_entry *e = &r->rt[r->rt_num++];
+            better_strncpy(e->rede_dest, rd, END_SIZE);
+            better_strncpy(e->mask, msk, END_SIZE);
+            better_strncpy(e->next_hop, nh, END_SIZE);
+            e->cost = cost;
+        }
+    }
+
+    fclose(f);
+    printf("Topologia carregada de '%s' com sucesso.\n", filename);
+    return 1;
+
+parse_error:
+    printf("Erro ao ler arquivo '%s'. Arquivo inválido ou corrompido.\n", filename);
+    fclose(f);
+    free_network(net);
+    return 0;
+}
+
 int table_menu(Network *topTopologia){
     int opt;
     if(topTopologia->router_count <=0)
@@ -427,6 +635,9 @@ int table_menu(Network *topTopologia){
         printf("5. Recalcular tabelas de roteamento (Dijkstra)\n");
         printf("6. Exibir tabelas de roteamento\n");
         printf("7. Deletar Roteador\n");
+        printf("8. Alterar máscara de entrada da tabela de roteamento\n");
+        printf("9. Salvar topologia em arquivo\n");
+        printf("10. Carregar topologia de arquivo\n");
         printf("0. Sair\n");
         printf("Escolha: ");
         scanf("%d", &opt);
@@ -495,6 +706,26 @@ int table_menu(Network *topTopologia){
                 delete_router(topTopologia,idx);
                 printf("Roteador deletado com sucesso"); 
                 break;
+
+            case 8:
+                change_entry_mask(topTopologia);
+                break;
+            case 9: {
+                char filename[256];
+                printf("Nome do arquivo: ");
+                fgets(filename, sizeof(filename), stdin);
+                filename[strcspn(filename, "\n")] = '\0';
+                save_network(topTopologia, filename);
+                break;
+            }
+            case 10: {
+                char filename[256];
+                printf("Nome do arquivo: ");
+                fgets(filename, sizeof(filename), stdin);
+                filename[strcspn(filename, "\n")] = '\0';
+                load_network(topTopologia, filename);
+                break;
+            }
 
             case 0:
                 printf("Encerrando...\n");
