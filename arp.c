@@ -50,3 +50,29 @@ const char* buscar_mac(const char* ip) {
 
     return NULL;
 }
+
+// Deleta um mapeamento IP -> MAC da tabela buscando pelo IP
+int deletar_arp(const char* ip) {
+    for (int i = 0; i < qtd_arp; i++) {
+        if (strcmp(tabela_arp[i].ip, ip) == 0) {
+            // Desloca todos os elementos seguintes uma posição para trás
+            for (int j = i; j < qtd_arp - 1; j++) {
+                tabela_arp[j] = tabela_arp[j + 1];
+            }
+            
+            // Limpa a última posição que ficou duplicada após o deslocamento
+            memset(&tabela_arp[qtd_arp - 1], 0, sizeof(EntradaARP));
+            
+            // Decrementa o contador de entradas na tabela
+            qtd_arp--;
+            
+            printf("[ARP] Mapeamento para o IP %s deletado com sucesso.\n", ip);
+            return 1; // Retorna 1 indicando sucesso na remoção
+        }
+    }
+
+    // Caso o IP não seja encontrado na tabela
+    printf("[ERRO ARP] IP %s nao encontrado na tabela para remocao.\n", ip);
+    return 0; // Retorna 0 indicando que nada foi removido
+}
+

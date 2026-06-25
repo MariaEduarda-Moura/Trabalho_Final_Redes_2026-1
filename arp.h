@@ -17,3 +17,4 @@ extern int qtd_arp;
 void inicializar_tabela_arp();
 int adicionar_arp(const char* ip, const char* mac);
 const char* buscar_mac(const char* ip);
+int deletar_arp(const char* ip);
