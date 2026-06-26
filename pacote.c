@@ -9,12 +9,12 @@
 Pacote criar_pacote(char *origem, char *destino, int ttl, char *conteudo) {
     Pacote p; // Cria uma variável temporária do tipo Pacote chamada 'p'
 
-    strcpy(p.ip_origem, origem);
-    strcpy(p.ip_destino, destino);
+    better_strncpy(p.ip_origem, origem, sizeof(p.ip_origem));
+    better_strncpy(p.ip_destino, destino, sizeof(p.ip_destino));
 
     p.ttl = ttl;
     
-    strcpy(p.dados, conteudo);
+    better_strncpy(p.dados, conteudo, sizeof(p.dados));
 
     return p; 
 }
