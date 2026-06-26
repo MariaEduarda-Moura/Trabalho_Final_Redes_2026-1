@@ -1,9 +1,12 @@
 #include <stdio.h>
+#include <windows.h>
+#undef interface  // windows.h define 'interface' como macro do COM; conflita com struct Router
 #include "arp.h"
 #include "table_structs.h"
 #include "pacotes.h"
 
 int main() {
+    SetConsoleOutputCP(65001);
     inicializar_tabela_arp();
     char opcao;
     Pacote pacote_atual;
