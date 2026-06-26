@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "encaminhamento.h"
+#include "arp.h"
 
 /*
  * Motor de forwarding usando a tabela de roteamento REAL do roteador.
@@ -53,12 +54,21 @@ void encaminhar_pacote(Pacote *p, Router *roteador_atual) {
         }
     }
 
-    /* 6. Resultado */
+    /* 6. Resultado e Consulta ARP */
     if (indice_melhor != -1) {
         printf("[Sucesso] Match encontrado! Rota escolhida via LPM (/%d)\n",
                melhor_prefixo);
-        printf("[Forwarding] Encaminhando para Next Hop: %s\n",
-               roteador_atual->rt[indice_melhor].next_hop);
+        char *next_hop_ip = roteador_atual->rt[indice_melhor].next_hop;
+        printf("[Forwarding] Encaminhando para Next Hop: %s\n", next_hop_ip);
+        
+        printf("[ARP] Consultando MAC para o IP %s...\n", next_hop_ip);
+        const char *mac_destino = buscar_mac(next_hop_ip);
+        
+        if (mac_destino != NULL) {
+            printf("[Link Layer] Quadro Ethernet montado com sucesso! MAC Destino: %s\n", mac_destino);
+        } else {
+            printf("[Erro Link Layer] Falha ao resolver ARP. Pacote descartado.\n");
+        }
     } else {
         printf("[Erro] Nenhuma rota encontrada para %s (Destination Unreachable).\n",
                p->ip_destino);
