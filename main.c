@@ -12,11 +12,11 @@ int main() {
     Network topTopologia;
     topTopologia.router_count = 0;
 
-    while(opcao != '9'){
+    while(opcao != '0'){
       printf("Qual menu você quer acessar?\n");
       printf("1 - Topologia de rede e roteadores\n");
       printf("2 - Criação e encaminhamento de pacotes\n");
-      printf("9 - Sair\n");
+      printf("0 - Sair\n");
       scanf("%c",&opcao);
       switch(opcao){
         case '1':
@@ -25,7 +25,7 @@ int main() {
         case '2':
           pacote_menu(&topTopologia);
           break;
-        case '9':
+        case '0':
           break;
         default: printf("Selecione uma opção válida\n");
         break; 
