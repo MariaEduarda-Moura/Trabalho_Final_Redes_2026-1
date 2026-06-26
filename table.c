@@ -736,6 +736,13 @@ int table_menu(Network *topTopologia){
             default:
                 printf("Opção inválida.\n");
         }
-    } while (opt != 0);
+
+        if (opt != 0) {
+            printf("\n[Pressione ENTER para continuar...]");
+            getchar(); // Espera o usuário apertar Enter
+            system("cls || clear"); // Limpa a tela
+        }
+
+    } while(opt != 0);
     return 1;
 }

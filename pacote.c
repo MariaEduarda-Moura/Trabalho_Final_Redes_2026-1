@@ -211,6 +211,13 @@ int pacote_menu(Network *net) {
             default:
                 printf("\n[Erro] Opcao invalida. Tente novamente.\n");
         }
+        
+        if (opcao != 0) {
+            printf("\n[Pressione ENTER para continuar...]");
+            getchar(); // Espera o usuário apertar Enter
+            system("cls || clear"); // Limpa a tela
+        }
+
     } while(opcao != 0);
 
     return 0;

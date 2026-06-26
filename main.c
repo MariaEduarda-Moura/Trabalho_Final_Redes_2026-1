@@ -8,16 +8,21 @@
 int main() {
     SetConsoleOutputCP(65001);
     inicializar_tabela_arp();
-    char opcao;
+    char opcao = ' ';
     Network topTopologia;
     topTopologia.router_count = 0;
 
     while(opcao != '0'){
-      printf("Qual menu você quer acessar?\n");
+      system("cls || clear");
+      printf("====================================\n");
+      printf("       SIMULADOR DE REDES - MENU    \n");
+      printf("====================================\n");
       printf("1 - Topologia de rede e roteadores\n");
       printf("2 - Criação e encaminhamento de pacotes\n");
       printf("0 - Sair\n");
-      scanf("%c",&opcao);
+      printf("Escolha: ");
+      scanf(" %c", &opcao); // Espaço antes do %c ignora whitespaces/newlines residuais
+      
       switch(opcao){
         case '1':
           table_menu(&topTopologia);
