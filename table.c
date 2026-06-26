@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "table_structs.h"
+#include "arp.h"
 #define MAX_MACS_HISTORICO 500
 
 /* Codigo da tabela de roteamento. As funcoes associadas como criar, deletar
@@ -178,6 +179,7 @@ void add_router_to_network(Network *net, Router *r) {
         net->router_capacity = new_cap;
     }
     net->routers[net->router_count++] = r;
+    adicionar_arp(r->endereco, r->MAC);
 }
 
 void add_phy_link_by_indices(Network *net, int idx1, int idx2) {
@@ -402,6 +404,7 @@ void delete_router(Network *net, int idx) {
     if (r->nome != NULL) free(r->nome);
     if (r->rt != NULL) free(r->rt);
     if (r->p_link != NULL) free(r->p_link);
+    deletar_arp(r->endereco);
     free(r);
 
     for (int j = idx; j < net->router_count - 1; j++) {
