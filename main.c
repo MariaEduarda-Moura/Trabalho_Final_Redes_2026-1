@@ -9,11 +9,6 @@ int main() {
     SetConsoleOutputCP(65001);
     inicializar_tabela_arp();
     char opcao;
-    Pacote pacote_atual;
-    int pacote_criado = 0;
-
-    char ip_orig[16], ip_dest[16], dados[100];
-    int ttl;
     Network topTopologia;
     topTopologia.router_count = 0;
 
@@ -28,7 +23,7 @@ int main() {
           table_menu(&topTopologia);
           break;        
         case '2':
-          pacote_menu();
+          pacote_menu(&topTopologia);
           break;
         case '9':
           break;

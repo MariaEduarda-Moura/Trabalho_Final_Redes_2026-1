@@ -1,4 +1,8 @@
+#ifndef PACOTES_H
+#define PACOTES_H
+
 #include <stdint.h>
+#include "table_structs.h"
 
 typedef struct {
     char ip_origem[16];  // Guarda o IP de quem envia. Tem tamanho 16 para caber o formato "XXX.XXX.XXX.XXX" + o fim do texto (\0)
@@ -17,5 +21,7 @@ Pacote criar_pacote(char *origem, char *destino, int ttl, char *conteudo);
 void imprimir_pacote(Pacote p);
 uint32_t ip_para_int(const char *ip_str);
 int contar_prefixo(const char *mask_str);
-void encaminhar_pacote(Pacote *p);
-int pacote_menu();
+void encaminhar_pacote_teste(Pacote *p);
+int pacote_menu(Network *net);
+
+#endif

@@ -6,7 +6,7 @@ LDFLAGS  :=
 LDLIBS   := 
 
 # 2. Target Executable Name
-TARGET   := my_program
+TARGET   := roteador
 
 # 3. Source and Object Files
 # Automatically collects all .c files in the current directory
