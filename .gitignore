@@ -1,1 +1,12 @@
+# Arquivos objeto
 *.o
+
+# Executaveis Linux
+a.out
+
+# Executaveis Windows
+*.exe
+
+# Executavel do projeto (sem extensao)
+my_program
+roteador

@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdint.h>
 #include "pacotes.h"
+#include "encaminhamento.h"
 
 // Esta função recebe os dados digitados e devolve um "Pacote" prontinho.
 Pacote criar_pacote(char *origem, char *destino, int ttl, char *conteudo) {
@@ -59,7 +60,7 @@ int contar_prefixo(const char *mask_str) {
 // ====================================================================
 
 // --- MOTOR DE ROTEAMENTO (PASSO 4) ---
-void encaminhar_pacote(Pacote *p) {
+void encaminhar_pacote_teste(Pacote *p) {
     printf("\n--- INICIANDO MOTOR DE ROTEAMENTO ---\n");
     if (p->ttl <= 0) {
         printf("[Erro] Pacote descartado (TTL = 0) - Time to Live Exceeded.\n");
@@ -97,7 +98,7 @@ void encaminhar_pacote(Pacote *p) {
 }
 // -----------------------------------------------------------------
 
-int pacote_menu() {
+int pacote_menu(Network *net) {
     int opcao;
     Pacote pacote_atual;
     int pacote_criado = 0; 
@@ -170,8 +171,28 @@ int pacote_menu() {
             case 4:
                 if (pacote_criado == 0) {
                     printf("\n[Erro] Voce precisa criar um pacote primeiro (Opcao 3).\n");
+                } else if (net != NULL && net->router_count > 0) {
+                    /* Topologia real disponivel: seleciona roteador de origem */
+                    printf("\n--- SELECIONAR ROTEADOR DE ORIGEM ---\n");
+                    for (int i = 0; i < net->router_count; i++) {
+                        printf("%d. %s (%s)\n", i, net->routers[i]->nome,
+                               net->routers[i]->endereco);
+                    }
+                    int escolha = -1;
+                    printf("Escolha o roteador de origem: ");
+                    scanf("%d", &escolha);
+                    getchar();
+                    if (escolha < 0 || escolha >= net->router_count) {
+                        printf("[Erro] Indice invalido.\n");
+                    } else if (net->routers[escolha]->rt_num == 0) {
+                        printf("[Aviso] Roteador sem rotas calculadas.\n");
+                        printf("        Execute Dijkstra no Menu 1 (opcao 5) primeiro.\n");
+                    } else {
+                        encaminhar_pacote(&pacote_atual, net->routers[escolha]);
+                    }
                 } else {
-                    encaminhar_pacote(&pacote_atual);
+                    /* Fallback: tabela local de testes (sem topologia real) */
+                    encaminhar_pacote_teste(&pacote_atual);
                 }
                 break;
                 
