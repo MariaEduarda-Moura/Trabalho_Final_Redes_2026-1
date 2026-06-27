@@ -1,37 +1,40 @@
-# Trabalho_Final_Redes_2026-1
+# Simulador de Roteador IP (Trabalho Final - Redes)
 
-**Status do Projeto**: Em desenvolvimento (Módulos separados aguardando integração final).
+**Status do Projeto**: Concluído.
 
-## Como testar os módulos isolados
+Este projeto é um simulador em C que reproduz o funcionamento interno de roteadores da internet. Ele integra os planos de controle e dados, indo desde o cálculo de topologia até o despacho de quadros na camada de enlace.
 
-### 1. Motor de Roteamento e Pacotes (Passo 4)
-O arquivo `pacote.c` contém a simulação isolada do Motor de Forwarding, testando as regras de TTL e o algoritmo de Longest Prefix Match (LPM).
-Para compilar e testar:
-```bash
-gcc pacote.c -o pacotes.exe
-./pacotes.exe
-```
-> Utilize o menu interativo para cadastrar rotas provisórias, criar pacotes e testar o comportamento de decisão de encaminhamento do roteador.
+## Principais Funcionalidades Implementadas
 
-### 2. Algoritmo de Dijkstra e Tabelas de Roteamento
-Para testar a criação de topologias, links de rede e cálculo das tabelas de roteamento:
-```bash
-gcc table.c table_structs.c -o roteamento.exe
-./roteamento.exe
-```
+- **Construção de Topologia**: Criação de roteadores e links.
+- **Roteamento (Plano de Controle)**: Cálculo automático das tabelas de roteamento usando o algoritmo de Dijkstra.
+- **Tabela ARP**: Resolução de IPs em endereços MAC físicos.
+- **Motor de Forwarding (Plano de Dados)**: Recebe pacotes, checa TTL, compara IPs usando *Longest Prefix Match (LPM)* e despacha.
 
-### 3. Tabela ARP
-Para testar a funcionalidade de mapeamento e inserção ARP isolada:
-```bash
-gcc main.c arp.c -o arp.exe
-./arp.exe
-```
+## Como Compilar e Rodar
 
-Para testar tudo, rode `make` se estiver no Linux ou `mingw32-make` se estiver no Windows.
+O projeto está centralizado em um único menu executável.
 
-Agora, é só executar o arquivo de saida "Roteador" 
+1. Compile o projeto utilizando o `Makefile` disponibilizado:
+   - No Windows: `mingw32-make`
+   - No Linux: `make`
+   
+> [!WARNING]
+> **Atenção usuários de Windows**: O comando para limpar a build (`mingw32-make clean`) utiliza o utilitário nativo `del`. Se você tentar executá-lo de dentro de um terminal Linux/Bash (como o Git Bash), ele retornará um erro dizendo que o comando não foi encontrado. Recomendamos utilizar o **PowerShell** ou **Prompt de Comando (CMD)** para rodar o Makefile.
 
----
-**Pendências**: 
-- Fazer o "Merge" de todos esses arquivos isolados.
-- Falta integrar definitivamente as tabelas de `table.c` com o motor desenvolvido em `pacote.c` num arquivo/menu unificado.
+2. Execute o simulador:
+   - No Windows: `.\Roteador.exe`
+   - No Linux: `./Roteador`
+
+No Menu Principal, você pode acessar a configuração da topologia (Opção 1) e o laboratório de pacotes (Opção 2).
+
+### 🚀 Guia Recomendado de Teste
+
+Para poupar tempo e não precisar cadastrar roteadores um por um manualmente, siga o fluxo abaixo:
+
+1. No Menu Principal, escolha a **Opção 1** (Topologia de rede e roteadores).
+2. Dentro do menu de Topologia, escolha a **Opção 10** (Carregar Topologia de Arquivo).
+3. Digite o nome do arquivo pronto: `topologia_desenho.txt` e aperte Enter.
+4. (Opcional) Adicione conexões/links entre os roteadores usando a **Opção 4**.
+5. Execute o algoritmo de Dijkstra na **Opção 5** para calcular as tabelas de roteamento automaticamente.
+6. Volte ao Menu Principal (**Opção 0**) e acesse a **Opção 2** para criar seus pacotes, ver as tabelas ARP funcionando e testar o encaminhamento!
