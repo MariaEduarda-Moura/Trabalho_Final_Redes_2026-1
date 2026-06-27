@@ -30,10 +30,6 @@ void imprimir_pacote(Pacote p) {
     printf("====================================\n");
 }
 
-// ====================================================================
-// INÍCIO: ESTRUTURAS AUXILIARES PARA FACILITAR A INTEGRAÇÃO (FRAN)
-// ====================================================================
-
 RotaTeste tabela_rotas_teste[100];
 int qtd_rotas_teste = 0;
 
@@ -55,11 +51,7 @@ int contar_prefixo(const char *mask_str) {
     return count;
 }
 
-// ====================================================================
-// FIM: ESTRUTURAS AUXILIARES
-// ====================================================================
-
-// --- MOTOR DE ROTEAMENTO (PASSO 4) ---
+// --- MOTOR DE ROTEAMENTO PARA TESTE ---
 void encaminhar_pacote_teste(Pacote *p) {
     printf("\n--- INICIANDO MOTOR DE ROTEAMENTO ---\n");
     if (p->ttl <= 0) {
@@ -172,23 +164,33 @@ int pacote_menu(Network *net) {
                 if (pacote_criado == 0) {
                     printf("\n[Erro] Voce precisa criar um pacote primeiro (Opcao 3).\n");
                 } else if (net != NULL && net->router_count > 0) {
-                    /* Topologia real disponivel: seleciona roteador de origem */
-                    printf("\n--- SELECIONAR ROTEADOR DE ORIGEM ---\n");
+                    /* Topologia real disponivel: busca o roteador pelo IP do pacote */
+                    int index_encontrado = -1;
                     for (int i = 0; i < net->router_count; i++) {
-                        printf("%d. %s (%s)\n", i, net->routers[i]->nome,
-                               net->routers[i]->endereco);
+                        if (strcmp(net->routers[i]->endereco, pacote_atual.ip_origem) == 0) {
+                            index_encontrado = i;
+                            break;
+                        }
                     }
-                    int escolha = -1;
-                    printf("Escolha o roteador de origem: ");
-                    scanf("%d", &escolha);
-                    getchar();
-                    if (escolha < 0 || escolha >= net->router_count) {
-                        printf("[Erro] Indice invalido.\n");
-                    } else if (net->routers[escolha]->rt_num == 0) {
-                        printf("[Aviso] Roteador sem rotas calculadas.\n");
+
+                    if (index_encontrado == -1) {
+                        printf("[Erro] IP de Origem do pacote (%s) nao pertence a nenhum roteador da topologia.\n", pacote_atual.ip_origem);
+                    } else if (net->routers[index_encontrado]->rt_num == 0) {
+                        printf("[Aviso] Roteador %s sem rotas calculadas.\n", net->routers[index_encontrado]->nome);
                         printf("        Execute Dijkstra no Menu 1 (opcao 5) primeiro.\n");
                     } else {
-                        encaminhar_pacote(&pacote_atual, net->routers[escolha]);
+                        printf("\n[Info] Roteador de origem '%s' detectado. Iniciando Traceroute...\n", net->routers[index_encontrado]->nome);
+                        Router *atual = net->routers[index_encontrado];
+                        int saltos = 1;
+                        while(atual != NULL) {
+                            if (strcmp(atual->endereco, pacote_atual.ip_destino) == 0) {
+                                printf("\n[SUCESSO FINAL] O pacote chegou ao destino: Roteador %s!\n", atual->nome);
+                                break;
+                            }
+                            printf("\n========== SALTO %d ==========", saltos);
+                            atual = encaminhar_pacote(&pacote_atual, atual, net);
+                            saltos++;
+                        }
                     }
                 } else {
                     /* Fallback: tabela local de testes (sem topologia real) */
